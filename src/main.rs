@@ -7,6 +7,10 @@ fn main() {
         .map(|a| a.parse::<f32>().expect("Unfocused window opacity should be a number"))
         .unwrap_or(0.77);
 
+    if unfocused_opacity < 0.0 || unfocused_opacity > 1.0 {
+        panic!("Opacity should be between 0.0 and 1.0")
+    }
+
     let mut sway = swayipc::Connection::new()
         .expect("Cannot connect to Sway");
 
