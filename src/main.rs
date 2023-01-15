@@ -1,4 +1,4 @@
-use swayipc::{EventType, WindowEvent, WindowChange, NodeType, Event};
+use swayipc::{EventType, WindowEvent, WindowChange, NodeType, Event, WorkspaceEvent, WorkspaceChange};
 
 fn main() {
     let unfocused_opacity = std::env::args()
@@ -21,11 +21,11 @@ fn main() {
         .find_focused(|n| matches!(n.node_type, NodeType::Con | NodeType::FloatingCon));
 
     for event in sway
-        .subscribe([EventType::Window])
+        .subscribe([EventType::Window, EventType::Workspace])
         .expect("Cannot subscribe to Sway events")
     {
-        if let Event::Window(e) = event.expect("Event error") {
-            match *e {
+        match event.expect("Window event error") {
+            Event::Window(e) => match *e {
 
                 WindowEvent { change: WindowChange::Mark, container: marked, .. } => {
                     let mut sway = swayipc::Connection::new()
@@ -71,6 +71,31 @@ fn main() {
 
                 _ => {}
             }
+
+            Event::Workspace(e) => match *e {
+                WorkspaceEvent {
+                    change: WorkspaceChange::Focus,
+                    current: Some(workspace),
+                    ..
+                } => {
+                    let Some(focused) = workspace.find_focused(|n|
+                         matches!(n.node_type, NodeType::Con | NodeType::FloatingCon)
+                    ) else {
+                        continue
+                    };
+
+                    let mut sway = swayipc::Connection::new()
+                        .expect("Cannot connect to Sway to set opacity on ws change");
+                    sway.run_command(format!("[con_id={}] opacity 1", focused.id))
+                        .expect("Cannot set focused window opacity");
+
+                    prev_focused = Some(focused)
+                }
+
+                _ => {}
+            }
+
+            _ => {}
         }
     }
 }
