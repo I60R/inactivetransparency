@@ -57,7 +57,9 @@ fn main() {
                         .find(|n| Some(n.id) == prev_focused.as_ref().map(|n| n.id));
 
                     if let Some(unfocused) = unfocused {
-                        if unfocused.marks.contains(&String::from("opaque")) {
+                        if unfocused.marks.contains(&String::from("opaque")) ||
+                            unfocused == focused
+                        {
                             continue;
                         }
                         sway.run_command(
