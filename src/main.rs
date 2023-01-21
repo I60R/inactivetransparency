@@ -41,7 +41,7 @@ fn main() {
                 },
 
                 WindowEvent { change: WindowChange::Focus, container: focused, .. } => {
-                    if prev_focused.as_ref() == Some(&focused) {
+                    if Some(focused.id) == prev_focused.as_ref().map(|n| n.id) {
                         continue
                     }
 
@@ -57,11 +57,13 @@ fn main() {
                         .find(|n| Some(n.id) == prev_focused.as_ref().map(|n| n.id));
 
                     if let Some(unfocused) = unfocused {
-                        if unfocused.marks.contains(&String::from("opaque")) ||
-                            unfocused == focused
-                        {
+                        if unfocused.marks.contains(&String::from("opaque")) {
+                            continue
+                        }
+                        if unfocused.id == focused.id {
                             continue;
                         }
+
                         sway.run_command(
                             format!("[con_id={}] opacity {unfocused_opacity}", unfocused.id)
                         )
@@ -81,7 +83,7 @@ fn main() {
                     ..
                 } => {
                     let Some(focused) = workspace.find_focused(|n|
-                         matches!(n.node_type, NodeType::Con | NodeType::FloatingCon)
+                        matches!(n.node_type, NodeType::Con | NodeType::FloatingCon)
                     ) else {
                         continue
                     };
